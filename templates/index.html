@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Automation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #1f1f35;
+            --border: #2a2a40;
+            --border-glow: #25d366;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888a0;
+            --text-muted: #555570;
+            --accent: #25d366;
+            --accent-hover: #20bd5a;
+            --accent-glow: rgba(37, 211, 102, 0.15);
+            --danger: #ff4757;
+            --danger-bg: rgba(255, 71, 87, 0.1);
+            --warning: #ffa502;
+            --success: #25d366;
+            --success-bg: rgba(37, 211, 102, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(37, 211, 102, 0.04) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(37, 211, 102, 0.03) 0%, transparent 50%),
+                        radial-gradient(ellipse at 50% 80%, rgba(30, 30, 60, 0.5) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent), #128C7E);
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 28px;
+            box-shadow: 0 8px 32px rgba(37, 211, 102, 0.25);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* Status Badge */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 28px;
+            transition: all 0.4s ease;
+        }
+
+        .status-bar.pending {
+            background: rgba(255, 165, 2, 0.1);
+            border: 1px solid rgba(255, 165, 2, 0.2);
+            color: var(--warning);
+        }
+
+        .status-bar.ready {
+            background: var(--success-bg);
+            border: 1px solid rgba(37, 211, 102, 0.2);
+            color: var(--success);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-bar.pending .status-dot {
+            background: var(--warning);
+        }
+
+        .status-bar.ready .status-dot {
+            background: var(--success);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(37, 211, 102, 0.15);
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        /* QR Section */
+        .qr-container {
+            text-align: center;
+        }
+
+        .qr-frame {
+            position: relative;
+            display: inline-block;
+            padding: 16px;
+            background: #ffffff;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .qr-frame img {
+            display: block;
+            width: 264px;
+            height: 264px;
+            border-radius: 8px;
+            image-rendering: pixelated;
+        }
+
+        .qr-loading {
+            width: 264px;
+            height: 264px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .qr-refresh-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Success state */
+        .success-state {
+            text-align: center;
+            padding: 32px 0;
+        }
+
+        .success-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--success-bg);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 16px;
+            animation: scaleIn 0.4s ease;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .success-state h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .success-state p {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-group textarea {
+            min-height: 88px;
+            resize: vertical;
+        }
+
+        .phone-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 13px 20px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #128C7E);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(37, 211, 102, 0.25);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(37, 211, 102, 0.35);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: var(--danger-bg);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--success-bg);
+            border: 1px solid rgba(37, 211, 102, 0.3);
+            color: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger-bg);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            color: var(--danger);
+        }
+
+        /* Log */
+        .log-entry {
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            margin-bottom: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-entry.sent { border-left: 3px solid var(--success); }
+        .log-entry.failed { border-left: 3px solid var(--danger); }
+
+        .log-phone {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .log-message {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 2px;
+            word-break: break-word;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .empty-log {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px 0;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* File Drop Zone */
+        .file-drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--bg-secondary);
+        }
+
+        .file-drop-zone:hover,
+        .file-drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .file-drop-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-selected {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .file-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--accent);
+            word-break: break-all;
+        }
+
+        .file-remove {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--danger-bg);
+            color: var(--danger);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .file-remove:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">💬</div>
+            <h1>WhatsApp Automation</h1>
+            <p>Scan QR · Send Messages · REST API</p>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar pending" id="statusBar">
+            <span class="status-dot"></span>
+            <span id="statusText">Connecting…</span>
+        </div>
+
+        <!-- QR Card -->
+        <div class="card" id="qrCard">
+            <div class="card-title">🔐 Authentication</div>
+            <div class="card-subtitle">Scan the QR code with your WhatsApp mobile app</div>
+            <div class="qr-container" id="qrContainer">
+                <div class="qr-frame">
+                    <div class="qr-loading" id="qrLoading">
+                        <div class="spinner"></div>
+                    </div>
+                    <img id="qrImage" src="" alt="WhatsApp QR Code" style="display: none;">
+                </div>
+                <div class="qr-refresh-hint">QR refreshes automatically every 3 seconds</div>
+            </div>
+            <!-- Shown after login -->
+            <div class="success-state" id="successState" style="display: none;">
+                <div class="success-icon">✓</div>
+                <h3>Connected</h3>
+                <p>WhatsApp session is active and ready to send messages</p>
+            </div>
+        </div>
+
+        <!-- Send Message Card -->
+        <div class="card" id="sendCard" style="opacity: 0.5; pointer-events: none;">
+            <div class="card-title">📤 Send Message</div>
+            <div class="card-subtitle">Deliver a WhatsApp message to any number</div>
+            <form id="sendForm">
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="text" id="phone" name="phone" placeholder="919876543210" autocomplete="off" required>
+                    <div class="phone-hint">Country code + number · No + or spaces · e.g. 91 for India</div>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" placeholder="Type your message here…" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" id="sendBtn">
+                    <span id="sendBtnText">Send Message</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Send Document Card -->
+        <div class="card" id="docCard" style="opacity: 0.5; pointer-events: none;">
+            <div class="card-title">📎 Send Document</div>
+            <div class="card-subtitle">Upload and send a file (PDF, image, doc, etc.)</div>
+            <form id="docForm">
+                <div class="form-group">
+                    <label for="docPhone">Phone Number</label>
+                    <input type="text" id="docPhone" name="phone" placeholder="919876543210" autocomplete="off" required>
+                    <div class="phone-hint">Country code + number · No + or spaces</div>
+                </div>
+                <div class="form-group">
+                    <label for="docFile">File</label>
+                    <div class="file-drop-zone" id="fileDropZone">
+                        <input type="file" id="docFile" name="file" required style="display: none;">
+                        <div class="file-drop-content" id="fileDropContent">
+                            <span style="font-size: 28px;">📄</span>
+                            <span style="font-size: 13px; color: var(--text-secondary);">Click to select or drag & drop a file</span>
+                        </div>
+                        <div class="file-selected" id="fileSelected" style="display: none;">
+                            <span class="file-name" id="fileName"></span>
+                            <span class="file-remove" id="fileRemove" title="Remove file">✕</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="docCaption">Caption (optional)</label>
+                    <input type="text" id="docCaption" name="caption" placeholder="Optional caption for the file" autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-primary" id="docSendBtn">
+                    <span id="docSendBtnText">Send Document</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Message Log -->
+        <div class="card" id="logCard" style="display: none;">
+            <div class="card-title">📋 Message Log</div>
+            <div class="card-subtitle" id="logSubtitle">Recent messages</div>
+            <div id="logEntries">
+                <div class="empty-log">No messages sent yet</div>
+            </div>
+        </div>
+
+        <!-- Restart Session -->
+        <button class="btn btn-ghost" id="restartBtn" style="margin-top: 8px;">
+            🔄 Restart Session (re-scan QR)
+        </button>
+
+        <div class="footer">
+            <p>API Docs: <a href="/docs" target="_blank">/docs</a> · Powered by Playwright + FastAPI</p>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── DOM Elements ──
+        const statusBar    = document.getElementById('statusBar');
+        const statusText   = document.getElementById('statusText');
+        const qrCard       = document.getElementById('qrCard');
+        const qrContainer  = document.getElementById('qrContainer');
+        const qrImage      = document.getElementById('qrImage');
+        const qrLoading    = document.getElementById('qrLoading');
+        const successState = document.getElementById('successState');
+        const sendCard     = document.getElementById('sendCard');
+        const sendForm     = document.getElementById('sendForm');
+        const sendBtn      = document.getElementById('sendBtn');
+        const sendBtnText  = document.getElementById('sendBtnText');
+        const docCard      = document.getElementById('docCard');
+        const docForm      = document.getElementById('docForm');
+        const docSendBtn   = document.getElementById('docSendBtn');
+        const docSendBtnText = document.getElementById('docSendBtnText');
+        const docFile      = document.getElementById('docFile');
+        const fileDropZone = document.getElementById('fileDropZone');
+        const fileDropContent = document.getElementById('fileDropContent');
+        const fileSelected = document.getElementById('fileSelected');
+        const fileName     = document.getElementById('fileName');
+        const fileRemove   = document.getElementById('fileRemove');
+        const logCard      = document.getElementById('logCard');
+        const logEntries   = document.getElementById('logEntries');
+        const logSubtitle  = document.getElementById('logSubtitle');
+        const restartBtn   = document.getElementById('restartBtn');
+        const toast        = document.getElementById('toast');
+
+        let isReady = false;
+        let messageLog = [];
+        let qrPollInterval = null;
+
+        // ── Toast ──
+        function showToast(msg, type = 'success') {
+            toast.textContent = msg;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }
+
+        // ── Status Polling ──
+        async function pollStatus() {
+            try {
+                const res = await fetch('/qr-status');
+                const data = await res.json();
+
+                if (data.ready && !isReady) {
+                    // Just became ready
+                    isReady = true;
+                    onReady();
+                } else if (!data.ready && data.needs_qr) {
+                    isReady = false;
+                    onNeedsQR();
+                } else if (!data.ready && !data.needs_qr) {
+                    statusBar.className = 'status-bar pending';
+                    statusText.textContent = 'Restoring session…';
+                }
+            } catch (e) {
+                statusBar.className = 'status-bar pending';
+                statusText.textContent = 'Server unreachable';
+            }
+        }
+
+        function onReady() {
+            statusBar.className = 'status-bar ready';
+            statusText.textContent = 'Connected & Ready';
+
+            // Hide QR, show success
+            qrContainer.style.display = 'none';
+            successState.style.display = 'block';
+
+            // Enable send card and doc card
+            sendCard.style.opacity = '1';
+            sendCard.style.pointerEvents = 'auto';
+            docCard.style.opacity = '1';
+            docCard.style.pointerEvents = 'auto';
+
+            // Stop QR polling
+            if (qrPollInterval) {
+                clearInterval(qrPollInterval);
+                qrPollInterval = null;
+            }
+
+            showToast('WhatsApp connected successfully!');
+        }
+
+        function onNeedsQR() {
+            statusBar.className = 'status-bar pending';
+            statusText.textContent = 'Scan QR Code to connect';
+
+            // Show QR, hide success
+            qrContainer.style.display = 'block';
+            successState.style.display = 'none';
+
+            // Disable send card and doc card
+            sendCard.style.opacity = '0.5';
+            sendCard.style.pointerEvents = 'none';
+            docCard.style.opacity = '0.5';
+            docCard.style.pointerEvents = 'none';
+
+            // Start QR image polling
+            if (!qrPollInterval) {
+                refreshQR();
+                qrPollInterval = setInterval(refreshQR, 3000);
+            }
+        }
+
+        async function refreshQR() {
+            try {
+                const res = await fetch('/qr?' + Date.now());
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    qrImage.onload = () => URL.revokeObjectURL(url);
+                    qrImage.src = url;
+                    qrImage.style.display = 'block';
+                    qrLoading.style.display = 'none';
+                }
+            } catch (e) {
+                // Ignore — next poll will retry
+            }
+        }
+
+        // ── Send Message ──
+        sendForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value.trim();
+            const message = document.getElementById('message').value.trim();
+            if (!phone || !message) return;
+
+            sendBtn.disabled = true;
+            sendBtnText.textContent = 'Sending…';
+
+            try {
+                const res = await fetch('/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, message }),
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    addLogEntry(phone, message, 'sent');
+                    showToast(`Message sent to ${phone}`);
+                    document.getElementById('message').value = '';
+                } else {
+                    addLogEntry(phone, data.detail || 'Unknown error', 'failed');
+                    showToast(data.detail || 'Failed to send', 'error');
+                }
+            } catch (err) {
+                addLogEntry(phone, err.message, 'failed');
+                showToast('Network error', 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtnText.textContent = 'Send Message';
+            }
+        });
+
+        function addLogEntry(phone, message, status) {
+            logCard.style.display = 'block';
+            messageLog.unshift({ phone, message, status, time: new Date() });
+
+            // Keep last 20
+            if (messageLog.length > 20) messageLog.pop();
+
+            logSubtitle.textContent = `${messageLog.length} message(s)`;
+
+            // Render
+            logEntries.innerHTML = messageLog.map(entry => `
+                <div class="log-entry ${entry.status}">
+                    <div>
+                        <div class="log-phone">${entry.status === 'sent' ? '✓' : '✗'} ${entry.phone}</div>
+                        <div class="log-message">${escapeHtml(entry.message)}</div>
+                    </div>
+                    <span class="log-time">${entry.time.toLocaleTimeString()}</span>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ── File Drop Zone ──
+        fileDropZone.addEventListener('click', () => docFile.click());
+
+        docFile.addEventListener('change', () => {
+            if (docFile.files.length > 0) {
+                showSelectedFile(docFile.files[0].name);
+            }
+        });
+
+        fileDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.add('dragover');
+        });
+
+        fileDropZone.addEventListener('dragleave', () => {
+            fileDropZone.classList.remove('dragover');
+        });
+
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                docFile.files = e.dataTransfer.files;
+                showSelectedFile(e.dataTransfer.files[0].name);
+            }
+        });
+
+        fileRemove.addEventListener('click', (e) => {
+            e.stopPropagation();
+            docFile.value = '';
+            fileDropContent.style.display = 'flex';
+            fileSelected.style.display = 'none';
+        });
+
+        function showSelectedFile(name) {
+            fileName.textContent = '📄 ' + name;
+            fileDropContent.style.display = 'none';
+            fileSelected.style.display = 'flex';
+        }
+
+        // ── Send Document ──
+        docForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('docPhone').value.trim();
+            const caption = document.getElementById('docCaption').value.trim();
+            const file = docFile.files[0];
+
+            if (!phone || !file) {
+                showToast('Phone and file are required', 'error');
+                return;
+            }
+
+            docSendBtn.disabled = true;
+            docSendBtnText.textContent = 'Uploading…';
+
+            try {
+                const formData = new FormData();
+                formData.append('phone', phone);
+                formData.append('file', file);
+                if (caption) formData.append('caption', caption);
+
+                const res = await fetch('/send-document', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    addLogEntry(phone, `📎 ${file.name}` + (caption ? ` — ${caption}` : ''), 'sent');
+                    showToast(`Document sent to ${phone}`);
+                    // Reset file input
+                    docFile.value = '';
+                    fileDropContent.style.display = 'flex';
+                    fileSelected.style.display = 'none';
+                    document.getElementById('docCaption').value = '';
+                } else {
+                    addLogEntry(phone, data.detail || 'Failed to send document', 'failed');
+                    showToast(data.detail || 'Failed to send', 'error');
+                }
+            } catch (err) {
+                addLogEntry(phone, err.message, 'failed');
+                showToast('Network error', 'error');
+            } finally {
+                docSendBtn.disabled = false;
+                docSendBtnText.textContent = 'Send Document';
+            }
+        });
+
+        // ── Restart Session ──
+        restartBtn.addEventListener('click', async () => {
+            if (!confirm('This will log you out. You will need to scan the QR code again. Continue?')) return;
+
+            restartBtn.disabled = true;
+            restartBtn.textContent = '🔄 Restarting…';
+
+            try {
+                await fetch('/restart-session', { method: 'POST' });
+                isReady = false;
+
+                // Reset UI
+                qrContainer.style.display = 'block';
+                successState.style.display = 'none';
+                qrImage.style.display = 'none';
+                qrLoading.style.display = 'flex';
+                sendCard.style.opacity = '0.5';
+                sendCard.style.pointerEvents = 'none';
+                docCard.style.opacity = '0.5';
+                docCard.style.pointerEvents = 'none';
+
+                showToast('Session cleared — scan new QR code');
+            } catch (err) {
+                showToast('Failed to restart session', 'error');
+            } finally {
+                restartBtn.disabled = false;
+                restartBtn.textContent = '🔄 Restart Session (re-scan QR)';
+            }
+        });
+
+        // ── Init ──
+        pollStatus();
+        setInterval(pollStatus, 2000);
+    </script>
+</body>
+</html>
